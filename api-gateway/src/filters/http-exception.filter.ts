@@ -7,11 +7,17 @@ import {
   Logger,
 } from '@nestjs/common';
 
+interface IException {
+  stack?: string;
+  message?: string;
+  name?: string;
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  catch(exception: IException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const request = ctx.getRequest();
@@ -22,7 +28,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const message =
-      exception instanceof HttpException ? exception.getResponse() : exception;
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : {
+            message: exception?.message,
+            name: exception?.name,
+          };
 
     this.logger.error(
       `Http Status: ${status} Error Message: ${JSON.stringify(message)}`,
